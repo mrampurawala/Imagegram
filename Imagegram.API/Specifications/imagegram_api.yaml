@@ -1,0 +1,313 @@
+openapi: 3.0.0
+servers:
+  - url: imageram
+    description: Default server
+info:
+  version: 1.0.0
+  title: Imagegram API
+  description: |
+    # Introduction   
+   
+    Use MIMS Imagegram APIs to access posts and comments
+    All communication needs to be secured using HTTPS with TLS 1.2 (or greater).
+
+
+    # Authentication
+
+    Imageram APIs uses an API key to manage authentication and authorization. 
+    
+    To make authenticated requests, you can take the following steps:
+    
+    **1. API Key**
+    
+    Pass **X-Account-Id** header with a valid key.
+    
+    # API Versions
+    
+    The Imagegram APIs are version controlled and a version number must be provided with each API call. By specifying a version number, you can get expected responses regardless of future changes to the APIs.
+
+    
+    # Pagination
+    
+    When retrieving information (especially for APIs which perform a search), the optional `limit` query parameter sets the maximum number of results to return in a response. The maximum is 50; larger values are treated as 50. If this value is empty or invalid, it will default to 20.
+    
+    This is yet to be implemented for getting `All Posts` endpoint.
+
+tags:
+  - name: Account
+    description:  |
+        Account APIs.
+  - name: Post
+    description:  |
+        Post and Comment APIs.
+  
+x-tagGroups:
+
+  - name: Imagegram
+    tags:
+      - Account
+      - Post
+          
+paths:
+  /api/v1/Account:
+    post:
+      tags:
+        - Account
+      summary: Create Account
+      description: Returns a UUID for a successful Account creation.
+      operationId: CreateAccount
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateAccountQuery"
+
+      responses:
+        "201":
+          description: Successful Account creation
+          content:
+            application/json:
+              schema:
+                type: string
+                description: UUID of the account ceated
+        "400":
+          description: List of validation errors
+  "/api/v1/Account/{uuid}":
+    delete:
+      tags:
+        - Account
+      summary: Delete Account
+      description: |
+        Account with UUID passed in the parameter will be deleted along with all account's posts and comment.
+          For extra safety, user is required to pass UUID in header as well as in the parameter.
+      operationId: DeleteAccount
+      parameters:
+        - name: uuid
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: 
+            Account will be deleted for UUID passed in the parameter.
+        "204":
+          description: No account exists with passed UUID.
+  /api/v1/Post:
+    get:
+      tags:
+        - Post
+      summary: Get a list of posts
+      description: |
+        Returns a list of postsfrom all users along with last 3 comments to each post.
+        
+        Please note, the pagination is **not** available for this endpoint
+      operationId: GetAllPosts
+      parameters:
+        - name: page
+          in: query
+          description: Page index (optional), default value is 1
+          required: false
+          schema:
+            type: integer
+            format: int32
+        - name: limit
+          in: query
+          description: Page size (optional), default value is 20. Maximum value is 50.
+          required: false
+          schema:
+            type: integer
+            format: int32
+      responses:
+        "200":
+          description: "{\r\n}"
+          content:
+            application/json:
+              schema:
+                uniqueItems: false
+                type: array
+                items:
+                  $ref: "#/components/schemas/Post"
+        "204":
+          description: Current page is empty
+        "400":
+          description: List of validation errors
+    post:
+      tags:
+        - Post
+      summary: Create Post with image and comment
+      description: Returns a post id after a successful Post creation.
+      operationId: PostImage
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                uploadedFile:
+                  description: Upload File
+                  type: string
+                  format: binary
+                comment:
+                  description: comment
+                  type: string
+              required:
+                - uploadedFile
+                - comment
+      responses:
+        "201":
+          description: Successful Post creation
+          content:
+            application/json:
+              schema:
+                type: string
+                description: Post ID for the post created.
+        "400":
+          description: List of validation errors
+  "/api/v1/Post/{postid}/comment":
+    get:
+      tags:
+        - Post
+      summary: Get a list of comments on a post
+      description: Returns a list of comments on a particular post.
+      operationId: GetComment
+      parameters:
+        - name: postid
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int32
+        - name: page
+          in: query
+          description: Page index (optional), default value is 1
+          required: false
+          schema:
+            type: integer
+            format: int32
+        - name: limit
+          in: query
+          description: Page size (optional), default value is 20. Maximum value is 50.
+          required: false
+          schema:
+            type: integer
+            format: int32
+      responses:
+        "200":
+          description: "List of comments on a post"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Comment"
+        "204":
+          description: Current page is empty
+        "400":
+          description: List of validation errors
+    post:
+      tags:
+        - Post
+      summary: Creates a Comment for a post
+      description: Returns a comment id after a successful Comment creation.
+      operationId: CreateComment
+      parameters:
+        - name: postid
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int32
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateCommentQuery"
+      responses:
+        "201":
+          description: Successful Comment creation
+          content:
+            application/json:
+              schema:
+                type: string
+                description: Comment ID for the comment created.
+        "400":
+          description: List of validation errors
+  "/api/v1/Post/{postid}/comment/{commentid}":
+    delete:
+      tags:
+        - Post
+      summary: Delete Comment
+      description: Returns a comment id for a successful Comment deletion.
+      operationId: DeleteComment
+      parameters:
+        - name: postid
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int32
+        - name: commentid
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int32
+      responses:
+        "200":
+          description: Successful Comment Deletion
+        "204":
+          description: No account exists
+components:
+  schemas:
+    CreateAccountQuery:
+      type: object
+      properties:
+        name:
+          description: The name to for the account to be created
+          type: string
+    Post:
+      type: object
+      properties:
+        postId:
+          format: int32
+          type: integer
+        imageContent:
+          format: byte
+          type: string
+        creatorUUID:
+          type: string
+        createdDate:
+          format: date-time
+          type: string
+        comments:
+          uniqueItems: false
+          type: array
+          items:
+            $ref: "#/components/schemas/Comment"
+    Comment:
+      description: Comment Model
+      type: object
+      properties:
+        commentId:
+          format: int32
+          description: Comment ID
+          type: integer
+        content:
+          description: Content of this Comment
+          type: string
+        postId:
+          format: int32
+          description: Post Id this comment belongs to
+          type: integer
+        creatorUUID:
+          description: UUID of creator for this Comment
+          type: string
+        createdDate:
+          format: date-time
+          description: Creation Date of this Comment
+          type: string
+    CreateCommentQuery:
+      type: object
+      properties:
+        comment:
+          description: Comment to be posted
+          type: string
