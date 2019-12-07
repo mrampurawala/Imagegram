@@ -1,15 +1,24 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Drawing;
 using System.IO;
 using System.Linq;
+using System.Net.Http;
+using System.Reflection;
 using System.Threading.Tasks;
 using Imagegram.API.Application.Entities;
 using Imagegram.API.Application.Repositories;
 using Imagegram.API.Application.Validations;
+using Imagegram.API.Helpers;
 using Imagegram.API.Infrastructure.Configurations;
 using Imagegram.API.Infrastructure.Middlewares;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using SixLabors.ImageSharp;
+using SixLabors.ImageSharp.Formats;
+using SixLabors.ImageSharp.Processing;
+using SixLabors.Primitives;
+using static Imagegram.API.Application.Enums.Constants;
 
 namespace Imagegram.API.Controllers
 {
@@ -20,14 +29,17 @@ namespace Imagegram.API.Controllers
     {
         private readonly IPostRepository _postRepository;
         private readonly IRequestHeaders _requestHeaders;
-        private readonly ImageContentType _contentTypeAllowed;
+        private readonly ImageContentType _imageContentType;
+        private readonly IImageFormatter _imageFormatter;
+
         private readonly string UUID = string.Empty;
 
-        public PostController(IPostRepository postRepository, IRequestHeaders requestHeaders, ImageContentType imageContentType)
+        public PostController(IPostRepository postRepository, IRequestHeaders requestHeaders, ImageContentType imageContentType, IImageFormatter imageFormatter)
         {
             _postRepository = postRepository;
             _requestHeaders = requestHeaders;
-            _contentTypeAllowed = imageContentType;
+            _imageContentType = imageContentType;
+            _imageFormatter = imageFormatter;
             if (!string.IsNullOrWhiteSpace(_requestHeaders.UUID))
             {
                 UUID = _requestHeaders.UUID;
@@ -87,9 +99,10 @@ namespace Imagegram.API.Controllers
         [HttpPost]
         public async Task<IActionResult> PostImage([FromForm] IFormFile uploadedFile, [FromForm] string comment) //CreatePostQuery query)
         {
+            int width = Convert.ToInt32(_imageContentType.Width);
             if (uploadedFile.ContentType != null)
             {
-                if (!_contentTypeAllowed.AllowedContentType.Contains(uploadedFile.ContentType))
+                if (!_imageContentType.AllowedContentType.Contains(uploadedFile.ContentType))
                     return BadRequest("File type not supported");
                 else
                 {
@@ -99,7 +112,9 @@ namespace Imagegram.API.Controllers
                         {
                             await uploadedFile.CopyToAsync(ms);
                             var fileBytes = ms.ToArray();
-                            var result = await _postRepository.CreatePost(fileBytes, UUID, comment);
+                            var convertedImageByte = _imageFormatter.CropAndConvert(fileBytes, 0, width, ImageFormat.JPG);
+                            
+                            var result = await _postRepository.CreatePost(convertedImageByte, UUID, comment);
                             if (!string.IsNullOrEmpty(result))
                                 return Created("/post/" + result, result);
                             else

@@ -10,6 +10,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Imagegram.API.Helpers;
 
 namespace Imagegram.API.Infrastructure.Services
 {
@@ -40,6 +41,12 @@ namespace Imagegram.API.Infrastructure.Services
         public static IServiceCollection AddPostImageSettings(this IServiceCollection services, IConfiguration configuration)
         {
             services.AddSingleton(configuration.GetSection("PostImage").Get<ImageContentType>());
+            return services;
+        }
+
+        public static IServiceCollection AddImageFormatter(this IServiceCollection services)
+        {
+            services.AddSingleton<IImageFormatter, ImageFormatter>();
             return services;
         }
 

@@ -45,7 +45,8 @@ namespace Imagegram.API
                 .AddCorsConfiguration()
                 .AddRequestHeaders()
                 .AddPostImageSettings(Configuration)
-                .AddConnectionSettings(Configuration);
+                .AddConnectionSettings(Configuration)
+                .AddImageFormatter();
 
             services.AddSwaggerGen(c =>
             {

@@ -19,17 +19,17 @@ namespace Imagegram.API.Infrastructure.Middlewares
         {
             IHeaderDictionary dictHeaders = context.Request.Headers;
 
-            //if (dictHeaders.ContainsKey("X-Account-Id"))
-            //{
-            //    headers.UUID = dictHeaders["X-Account-Id"];
-            //}
-            //else
-            //{
+            if (dictHeaders.ContainsKey("X-Account-Id"))
+            {
+                headers.UUID = dictHeaders["X-Account-Id"];
+            }
+            else
+            {
 
-            //    context.Response.StatusCode = 401; //Bad Request                
-            //    await context.Response.WriteAsync("User Key is missing");
-            //    return;
-            //}
+                context.Response.StatusCode = 401; //Bad Request                
+                await context.Response.WriteAsync("API Key is missing");
+                return;
+            }
 
             await _next(context);
         }
