@@ -135,8 +135,10 @@ paths:
     post:
       tags:
         - Post
-      summary: Create Post with image and comment
-      description: Returns a post id after a successful Post creation.
+      summary: Create Post with an image and a comment
+      description: |
+        Returns a post id after a successful Post creation.
+        User can only upload an image of format JPEG/JPG, BMP or a PNG.
       operationId: PostImage
       requestBody:
         content:
@@ -145,7 +147,9 @@ paths:
               type: object
               properties:
                 uploadedFile:
-                  description: Upload File
+                  description: |
+                    Upload File with JPEG, BMP and PNG as a supported format.
+                  
                   type: string
                   format: binary
                 comment:
